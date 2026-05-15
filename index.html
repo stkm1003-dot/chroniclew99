@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>冒険者たちの記録 - 深淵の書庫</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Shippori+Mincho:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* 全体のスタイル：極限のダークトーン（深い闇） */
+        body {
+            font-family: 'Shippori Mincho', 'Times New Roman', Times, serif;
+            margin: 0; padding: 0; 
+            background-color: #070504;
+            color: #d0d6dd; min-height: 100vh; display: flex; flex-direction: column;
+            position: relative;
+            overflow-x: hidden; /* 横スクロール防止 */
+        }
+
+        /* ▼▼ 焚き火の光と火の粉のアニメーション ▼▼ */
+        .fire-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background: radial-gradient(circle at 50% 120%, rgba(139, 45, 15, 0.35) 0%, rgba(80, 20, 5, 0.15) 50%, transparent 80%);
+            z-index: 1; pointer-events: none;
+            animation: flicker 4s infinite alternate ease-in-out;
+        }
+        .embers-1 {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background-image: 
+                radial-gradient(1.5px 1.5px at 15px 50px, rgba(255, 180, 50, 0.8), transparent),
+                radial-gradient(2px 2px at 85px 150px, rgba(255, 100, 20, 0.9), transparent),
+                radial-gradient(1px 1px at 150px 20px, rgba(255, 140, 40, 0.6), transparent),
+                radial-gradient(2.5px 2.5px at 220px 180px, rgba(255, 80, 10, 0.8), transparent);
+            background-size: 300px 300px;
+            z-index: 2; pointer-events: none;
+            animation: rise1 20s infinite linear, twinkle 3s infinite alternate;
+        }
+        .embers-2 {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background-image: 
+                radial-gradient(2px 2px at 40px 80px, rgba(255, 200, 80, 0.9), transparent),
+                radial-gradient(1px 1px at 120px 220px, rgba(255, 150, 30, 0.7), transparent),
+                radial-gradient(1.5px 1.5px at 200px 60px, rgba(255, 100, 20, 0.8), transparent),
+                radial-gradient(2px 2px at 280px 280px, rgba(255, 120, 40, 0.8), transparent);
+            background-size: 400px 400px;
+            z-index: 3; pointer-events: none;
+            animation: rise2 25s infinite linear, twinkle 4s infinite alternate-reverse;
+        }
+        @keyframes flicker {
+            0% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); }
+            100% { opacity: 0.8; transform: scale(1); }
+        }
+        @keyframes rise1 { 0% { background-position: 0 0; } 100% { background-position: -50px -300px; } }
+        @keyframes rise2 { 0% { background-position: 0 0; } 100% { background-position: 50px -400px; } }
+        @keyframes twinkle { 0% { opacity: 0.1; } 100% { opacity: 1; } }
+        /* ▲▲ 焚き火アニメーション ここまで ▲▲ */
+        
+        header {
+            padding: 3rem 1.5rem 1rem; text-align: center; border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            background: rgba(4, 5, 8, 0.6); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 100;
+        }
+        header h1 {
+            font-family: 'Cinzel', 'Shippori Mincho', serif; margin: 0; font-size: 2.2rem;
+            font-weight: 700; letter-spacing: 0.15em; color: #c5a059; text-shadow: 0 0 15px rgba(197, 160, 89, 0.3); cursor: pointer;
+        }
+        
+        nav { margin-top: 1.5rem; display: flex; justify-content: center; align-items: center; gap: 2rem; flex-wrap: wrap; }
+        nav a.nav-tab {
+            color: #8a96a3; text-decoration: none; font-size: 1rem; letter-spacing: 0.1em;
+            cursor: pointer; transition: 0.3s; padding-bottom: 0.5rem; border-bottom: 2px solid transparent;
+        }
+        nav a.nav-tab:hover, nav a.nav-tab.active { color: #c5a059; border-bottom: 2px solid #c5a059; }
+        
+        nav a.sns-link {
+            color: #c5a059; text-decoration: none; font-size: 0.9rem; font-weight: bold;
+            border: 1px solid rgba(197, 160, 89, 0.4); border-radius: 20px; padding: 0.3rem 1rem;
+            transition: 0.3s; display: none;
+        }
+        nav a.sns-link:hover { background: rgba(197, 160, 89, 0.2); transform: translateY(-2px); }
+
+        .search-container { margin-top: 1.5rem; margin-bottom: 1rem; display: none; }
+        .search-box {
+            background: rgba(15, 18, 24, 0.6); border: 1px solid rgba(197, 160, 89, 0.3); color: #e0e0e0;
+            padding: 0.8rem 1.5rem; border-radius: 20px; width: 100%; max-width: 400px; font-family: 'Shippori Mincho', serif; outline: none;
+        }
+        
+        .container { max-width: 1200px; margin: 3rem auto; padding: 0 1.5rem; flex-grow: 1; position: relative; z-index: 10; }
+        
+        .page-section { display: none; animation: fadeIn 0.5s ease-in-out; }
+        .page-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .text-page { background: rgba(12, 15, 20, 0.5); border: 1px solid rgba(197, 160, 89, 0.15); border-radius: 4px; padding: 3rem; backdrop-filter: blur(5px); line-height: 1.8; max-width: 850px; margin: 0 auto; }
+        .text-page h2 { color: #c5a059; text-align: center; font-size: 1.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.2); padding-bottom: 1rem; margin-bottom: 2rem; }
+        .text-page h3 { color: #e0e0e0; font-size: 1.2rem; margin-top: 2.5rem; border-left: 3px solid #c5a059; padding-left: 1rem; }
+        
+        .adventurer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5rem; align-items: start; }
+        @media (max-width: 1000px) { .adventurer-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 650px) { .adventurer-grid { grid-template-columns: 1fr; } }
+
+        .adventurer-card {
+            background: rgba(10, 13, 18, 0.6); border: 1px solid rgba(197, 160, 89, 0.15); border-radius: 4px; overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8); transition: 0.3s; display: flex; flex-direction: column; backdrop-filter: blur(3px);
+        }
+        .adventurer-card:hover { border-color: rgba(197, 160, 89, 0.5); transform: translateY(-5px); background: rgba(10, 13, 18, 0.8); }
+        .image-wrapper { padding: 2rem 1.5rem 0; text-align: center; }
+        .profile-image { width: 140px; height: 140px; object-fit: contain; background: rgba(0, 0, 0, 0.3); border-radius: 50%; border: 2px solid rgba(197, 160, 89, 0.3); filter: grayscale(15%) brightness(0.9); }
+        .info-area { padding: 1.5rem 2rem 1.5rem; flex-grow: 1; display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .name { font-family: 'Cinzel', 'Shippori Mincho', serif; font-size: 1.2rem; color: #e0e0e0; letter-spacing: 0.05em; margin: 0 0 0.5rem 0; }
+        .class-title { color: #c5a059; font-size: 0.8rem; letter-spacing: 0.1em; margin-bottom: 1rem; }
+        .description { font-size: 0.85rem; line-height: 1.7; margin-bottom: 1.5rem; color: #a2abb5; text-align: left; }
+        
+        .button-group { display: flex; gap: 0.8rem; width: 100%; margin-bottom: 1.5rem; }
+        .btn { display: inline-block; text-decoration: none; padding: 0.6rem; border-radius: 2px; font-size: 0.8rem; text-align: center; flex: 1; cursor: pointer; transition: 0.3s; }
+        .guide-btn { background-color: rgba(197, 160, 89, 0.1); color: #c5a059; border: 1px solid #c5a059; }
+        .guide-btn:hover { background-color: rgba(197, 160, 89, 0.25); color: #fff; }
+        .wiki-btn { background-color: transparent; color: #788594; border: 1px solid #5a6573; }
+        .wiki-btn:hover { color: #d0d6dd; border-color: #8a96a3; }
+
+        .toggle-chat-btn { background: transparent; color: #c5a059; border: none; border-top: 1px dashed rgba(197, 160, 89, 0.2); width: 100%; padding: 0.8rem 0; font-family: 'Shippori Mincho', serif; font-size: 0.85rem; cursor: pointer; }
+        .chat-section { display: none; flex-direction: column; background: rgba(0, 0, 0, 0.4); }
+        .chat-section.active { display: flex; }
+        .chat-board { height: 200px; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+        .tavern-board { height: 350px; background: rgba(0,0,0,0.3); margin-bottom: 1.5rem; }
+        .chat-message { background: rgba(255,255,255,0.02); padding: 0.6rem; border-left: 2px solid #c5a059; color: #d0d6dd; font-size: 0.8rem; text-align: left; }
+        .chat-form { display: flex; flex-direction: column; gap: 0.4rem; padding: 1rem; background: rgba(8, 10, 14, 0.5); }
+        .chat-form input, .chat-form textarea { background: rgba(4, 5, 8, 0.6); border: 1px solid rgba(197, 160, 89, 0.2); color: #d0d6dd; padding: 0.5rem; font-size: 0.85rem; outline: none; }
+        .send-btn { padding: 0.5rem; background: rgba(197, 160, 89, 0.15); border: 1px solid #c5a059; color: #c5a059; cursor: pointer; }
+
+        /* スレッド用のスタイル */
+        .thread-card { background: rgba(10, 13, 18, 0.6); border: 1px solid rgba(197, 160, 89, 0.2); padding: 1.2rem; border-radius: 4px; cursor: pointer; transition: 0.3s; margin-bottom: 0.8rem; backdrop-filter: blur(3px); }
+        .thread-card:hover { background: rgba(197, 160, 89, 0.15); border-color: rgba(197, 160, 89, 0.6); transform: translateX(5px); }
+        .thread-title { font-size: 1.1rem; color: #e0e0e0; margin-bottom: 0.5rem; font-weight: bold; font-family: 'Shippori Mincho', serif; }
+        .thread-meta { display: flex; justify-content: space-between; font-size: 0.8rem; color: #8a96a3; }
+
+        .no-results { display: none; text-align: center; color: #788594; padding: 3rem 0; grid-column: 1 / -1; }
+        footer { background: rgba(4, 5, 8, 0.8); border-top: 1px solid rgba(197, 160, 89, 0.15); padding: 2rem 1.5rem; text-align: center; font-size: 0.8rem; color: #5a6573; backdrop-filter: blur(5px); position: relative; z-index: 10; }
+        .footer-links { display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .footer-links a { color: #8a96a3; text-decoration: none; cursor: pointer; }
+        .copyright { font-family: 'Cinzel', serif; }
+        #loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: #070504; z-index: 9999; display: flex; justify-content: center; align-items: center; color: #c5a059; font-family: 'Cinzel', serif; font-size: 1.2rem; letter-spacing: 0.2em; }
+    </style>
+</head>
+<body>
+
+    <!-- 焚き火アニメーション -->
+    <div class="fire-bg"></div>
+    <div class="embers-1"></div>
+    <div class="embers-2"></div>
+
+    <div id="loading-overlay">Opening the Chronicles...</div>
+
+    <header>
+        <h1 onclick="window.showPage('japan')">Chronicles of the Wanderers</h1>
+        <nav>
+            <a id="nav-japan" class="nav-tab active" onclick="window.showPage('japan')">日本人の足跡</a>
+            <a id="nav-world" class="nav-tab" onclick="window.showPage('world')">海外に目を向ける</a>
+            <a id="nav-tavern" class="nav-tab" onclick="window.showPage('tavern')">冒険者の酒場</a>
+            <a id="nav-about" class="nav-tab" onclick="window.showPage('about')">この領域について</a>
+            <a id="link-x" target="_blank" rel="noopener noreferrer" class="sns-link">𝕏</a>
+            <a id="link-note" target="_blank" rel="noopener noreferrer" class="sns-link">note</a>
+        </nav>
+        <div id="search-container" class="search-container">
+            <input type="text" id="search-input" class="search-box" placeholder="名前、フィールド、記憶の断片..." onkeyup="window.filterAdventurers()">
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- ▼▼ 日本人の足跡 ▼▼ -->
+        <section id="page-japan" class="page-section active">
+            <div class="adventurer-grid" id="grid-japan"></div>
+            <div id="no-results-japan" class="no-results">深淵からの応答はありません。</div>
+        </section>
+
+        <!-- ▼▼ 海外に目を向ける ▼▼ -->
+        <section id="page-world" class="page-section">
+            <div class="text-page" style="margin-bottom: 3rem; background: rgba(8, 10, 14, 0.4); text-align: center;">
+                <h2>海外に目を向ける</h2>
+                <p>国境を越え、未踏の極地や深海、さらには宇宙へと足跡を印した世界の探求者たち。<br>彼らの記録は、人類の可能性が無限であることを静かに物語っています。</p>
+            </div>
+            <div class="adventurer-grid" id="grid-world"></div>
+            <div id="no-results-world" class="no-results">深淵からの応答はありません。</div>
+        </section>
+
+        <!-- ▼▼ 冒険者の酒場（スレッド対応版） ▼▼ -->
+        <section id="page-tavern" class="page-section">
+            <div class="text-page" style="max-width: 900px; padding: 2rem 1.5rem;">
+                <h2 style="margin-bottom: 1rem;">冒険者の酒場</h2>
+                <p style="text-align: center; color: #a2abb5; margin-bottom: 2rem;">ここは、夜な夜な旅人たちが集い、記憶や感想を語り合う深い森の奥の酒場です。<br>焚き火を囲むように、思い思いの卓（スレッド）を設けて語り合ってください。</p>
+
+                <!-- スレッド（卓）一覧画面 -->
+                <div id="tavern-thread-list">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(197, 160, 89, 0.2); padding-bottom: 1rem;">
+                        <h3 style="margin: 0; border: none; padding: 0;">語り合いの卓 一覧</h3>
+                        <button onclick="window.toggleNewThreadForm()" class="btn guide-btn" style="padding: 0.5rem 1rem; flex: none; min-width: auto;">＋ 新たな卓を設ける</button>
+                    </div>
+
+                    <!-- 新規スレッド作成フォーム -->
+                    <div id="new-thread-form" class="chat-form" style="display: none; margin-bottom: 2rem; border:1px solid rgba(197,160,89,0.3); background: rgba(0,0,0,0.4);">
+                        <div style="color: #c5a059; margin-bottom: 0.5rem; font-weight: bold;">【新たな卓を設ける】</div>
+                        <input type="text" id="thread-title" placeholder="卓の題名（例：一番泣けた山岳ノンフィクションについて）" maxlength="50">
+                        <input type="text" id="thread-author" placeholder="名乗るがいい（あなたの名前）" maxlength="15">
+                        <textarea id="thread-first-msg" placeholder="最初の言葉を刻む（メッセージ）" style="min-height: 80px;"></textarea>
+                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                            <button onclick="window.createThread()" class="send-btn" style="flex: 1;">卓を設ける</button>
+                            <button onclick="window.toggleNewThreadForm()" class="wiki-btn btn" style="flex: 1; padding: 0.6rem;">やめる</button>
+                        </div>
+                    </div>
+
+                    <div id="threads-container" style="max-height: 500px; overflow-y: auto; padding-right: 5px;">
+                        <div style="text-align:center; color:#5a6573; margin-top:20px;">卓を探しています...</div>
+                    </div>
+                </div>
+
+                <!-- スレッド詳細（チャット）画面 -->
+                <div id="tavern-single-thread" style="display: none;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem; border-bottom: 1px solid rgba(197, 160, 89, 0.2); padding-bottom: 1rem;">
+                        <button onclick="window.backToThreadList()" class="wiki-btn btn" style="padding: 0.5rem 1rem; flex: none; min-width: auto;">◀ 一覧へ戻る</button>
+                        <h3 id="current-thread-title" style="margin: 0; font-size: 1.2rem; color: #e0e0e0; text-align: center; flex: 1; border: none; padding: 0;"></h3>
+                    </div>
+
+                    <div id="board-tavern-thread" class="chat-board tavern-board"></div>
+                    <div class="chat-form" style="border:1px solid rgba(197,160,89,0.15); background: rgba(0,0,0,0.4);">
+                        <input type="text" id="name-tavern-thread" placeholder="名乗るがいい（名前）" maxlength="15">
+                        <textarea id="msg-tavern-thread" placeholder="何を語る？（メッセージ）" style="min-height: 80px;"></textarea>
+                        <button id="btn-post-tavern-thread" class="send-btn" style="padding: 1rem;">言葉を残す</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ▼▼ この領域について ▼▼ -->
+        <section id="page-about" class="page-section">
+            <div class="text-page">
+                <h2>この領域について</h2>
+                <p>満員電車の中、あるいは繰り返される日常の業務の中。ふと息苦しさを覚えることはないでしょうか。私はそんな時、常に極北の風や、誰も踏み入れたことのない白銀の世界を思い描きます。</p>
+                <p>当サイト「Chronicles of the Wanderers」は、己の限界に挑み、生死の境を彷徨った129名の偉大な探求者たちの軌跡を編纂した書庫です。効率化ばかりが求められる現代において、あえて「無謀」と呼ばれた彼らの挑戦を知ることは、私たちの内なる熱を呼び覚ますことでもあります。</p>
+                <p>ここでは単なる記録の羅列ではなく、読者同士がその熱狂を分かち合えるよう、全紹介カードに専用の掲示板を設置しました。彼らが遺した言葉に触れ、誰かと語り合う。その体験が、あなたの日常という名の冒険を生き抜く糧となることを願っています。</p>
+                
+                <h3>書庫の主（管理人）</h3>
+                <p><strong>軌跡の案内人</strong><br>ノンフィクションと冒険の記録を愛する者。日常の閉塞感を打ち破る「熱」を求めて、数多の書物をこの深淵に集めています。</p>
+
+                <h3>道しるべ（各種ボタン）について</h3>
+                <p>各探求者のカードには、彼らの足跡をさらに深く辿るための二つの道しるべを用意しています。</p>
+                <ul style="color: #a2abb5; line-height: 1.8; margin-bottom: 2rem;">
+                    <li style="margin-bottom: 0.8rem;"><strong style="color: #c5a059;">「軌跡を辿る」：</strong> Amazon.co.jpのサイトへ遷移します。ぜひ彼らが遺した書籍を探し、その熱狂的な冒険の記録に直接触れてみてください。</li>
+                    <li><strong style="color: #e0e0e0;">「書庫へ」：</strong> Wikipediaへ遷移します。彼らの生涯や歴史的な業績、客観的な記録をより深く知ることができます。</li>
+                </ul>
+
+                <h3>盟約と免責事項</h3>
+                <p><strong>アフィリエイトについて：</strong> 当サイトはAmazonアソシエイト・プログラムの参加者です。紹介している書籍リンクから購入が発生した場合、サイト運営の維持費（ドメイン代等）として還元されます。</p>
+                <p><strong>情報の正確性：</strong> コンテンツの正確性には細心の注意を払っておりますが、最新の価格や在庫状況はAmazon.co.jpにてご確認ください。本サイトの利用により生じたいかなる損害も責任を負いかねます。</p>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <div class="footer-links">
+            <a onclick="window.showPage('about')">運営者情報・免責事項</a>
+            <a id="link-email" href="chroniclewanderer99@gmail.com">お問い合わせ</a>
+        </div>
+        <div class="copyright">&copy; 2026 Chronicles of the Wanderers. All rights reserved.</div>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ============================================================
+        // 設定エリア：URLやAmazonリンク（画像）を貼り付けてください
+        // ============================================================
+        const siteConfig = {
+            x_url: "https://x.com/chroniclew99",     // 𝕏のアカウントURL
+            note_url: "",  // noteのアカウントURL
+            email: "chroniclewanderer99@gmail.com"      // 連絡用メールアドレス
+        };
+
+        // ▼ 日本の探求者たち
+        const japanList = [
+            { name: "植村直己", title: "極地の足跡", img: "https://m.media-amazon.com/images/I/513x6ZwgoBL._SL500_.jpg", desc: "五大陸最高峰制覇、北極点単独行。人類の限界に挑み続けた不屈の男。厳冬の大自然と向き合う圧倒的な孤独と生への渇望が記された手記は必読。", link: "https://amzn.to/3R2GtCm" },
+            { name: "星野道夫", title: "極北の足跡", img: "https://m.media-amazon.com/images/I/41vYR6Am84L._SL500_.jpg", desc: "アラスカを生涯愛した写真家。野生動物と人々の暮らしを捉えた作品は、今も多くの人の心を打つ。静謐で深い慈しみに満ちた文章も魅力。", link: "https://amzn.to/4nu8mQ0" },
+            { name: "堀江謙一", title: "海の足跡", img: "https://m.media-amazon.com/images/I/51hBv8EMHpL._SL500_.jpg", desc: "1962年、小型ヨットで太平洋単独横断に世界で初めて成功。ただ海への情熱だけで荒波に乗り出した若者の、痛快で壮絶な航海記。", link: "https://amzn.to/3Rj1h8B" },
+            { name: "高野秀行", title: "辺境の足跡", img: "https://m.media-amazon.com/images/I/51qF+tfDiBL._SL500_.jpg", desc: "誰も行かない世界の辺境へ赴き、幻の怪獣を探したり未知の言語を学んだりするノンフィクション作家。「誰もやらないことをやる」がモットー。", link: "https://amzn.to/4tqAG7b", wiki: "https://ja.wikipedia.org/wiki/高野秀行_(ノンフィクション作家)" },
+            { name: "関野吉晴", title: "大地の足跡", img: "https://m.media-amazon.com/images/I/51ykarfJ2zL._SL500_.jpg", desc: "アフリカから南米最南端まで、人類の拡散を遡る壮大な探検「グレートジャーニー」を自力のみで達成した医師。地球の鼓動を肌で感じ取った記録。", link: "https://amzn.to/48TnxvT" },
+            { name: "石川直樹", title: "旅の足跡", img: "https://m.media-amazon.com/images/I/218WEHfmPzL._SL500_.jpg", desc: "辺境や都市を撮影する写真家。エベレスト登頂なども実践し、移動という行為そのものを作品に昇華。人類学的な視点が光る。", link: "https://amzn.to/4uIlS4z", wiki: "https://ja.wikipedia.org/wiki/石川直樹_(写真家)" },
+            { name: "田部井淳子", title: "頂の足跡", img: "https://m.media-amazon.com/images/I/51PxJ0WYHRL._SL500_.jpg", desc: "女性として世界で初めてエベレストおよび七大陸最高峰への登頂を果たした登山家。しなやかで力強い足跡は世界中に勇気を与えた。", link: "https://amzn.to/4nmvqQB" },
+            { name: "三浦雄一郎", title: "山の足跡", img: "https://m.media-amazon.com/images/I/51ShaTfO+lL._SL500_.jpg", desc: "エベレストからのスキー滑降や、80歳での三度目の登頂を成し遂げた超人。夢を追い続けるその不屈の情熱は、年齢の壁を軽々と超える。", link: "https://amzn.to/4tv4jEo" },
+            { name: "野口健", title: "山の足跡", img: "https://m.media-amazon.com/images/I/4119YML30WL._SL500_.jpg", desc: "世界最年少で七大陸最高峰登頂。その後、清掃登山を提唱。山を「登る」だけでなく「守る」ことに生涯を捧げるアルピニスト。", link: "https://amzn.to/3R1wFsh" },
+            { name: "吉田勝次", title: "地底の足跡", img: "https://m.media-amazon.com/images/I/516gV-ssGjL._SL500_.jpg", desc: "人類未踏の巨大洞窟を求めて漆黒の闇の奥底へ潜る、プロの洞窟探検家。泥にまみれ狭所を這うクレイジーな冒険の全貌。", link: "https://amzn.to/4uOpDG1", wiki: "https://ja.wikipedia.org/wiki/吉田勝次_(洞窟探検家)" },
+            { name: "角幡唯介", title: "極夜の足跡", img: "https://m.media-amazon.com/images/I/31BoSjGZYPL._SL500_.jpg", desc: "太陽が昇らない北極の「極夜」を犬と旅する。GPSを持たず「システムの外側」へ踏み込む思想は、現代社会への鋭い問いかけ。", link: "https://amzn.to/4uOpDG1" },
+            { name: "荻田泰永", title: "極地の足跡", img: "https://m.media-amazon.com/images/I/4171PKs8qUL._SL500_.jpg", desc: "日本人初の北極点無補給単独徒歩到達を達成。死と隣り合わせの氷海を歩き抜く、圧倒的な精神力とサバイバル技術を持つ極地冒険家。", link: "https://amzn.to/49Gb5zO" },
+            { name: "長谷川恒男", title: "岩壁の足跡", img: "https://m.media-amazon.com/images/I/410oLCzGewL._SL500_.jpg", desc: "アルプス三大北壁の冬季単独初登攀を成し遂げた天才アルピニスト。垂直の氷岩壁に挑むストイックな哲学を遺した。", link: "https://amzn.to/4fgBGam" },
+            { name: "山野井泰史", title: "氷壁の足跡", img: "https://m.media-amazon.com/images/I/51IALJr-FKL._SL500_.jpg", desc: "世界の巨壁に単独・無酸素で挑み続ける世界屈指のクライマー。生還不能と言われた状況からの脱出など、極限の登攀記録。", link: "https://amzn.to/49IFhdD" },
+            { name: "椎名誠", title: "漂流の足跡", img: "https://m.media-amazon.com/images/I/41IbMm2jL5L._SL500_.jpg", desc: "怪しい探検隊を率いて世界の辺境を旅する作家。無謀でユーモラスな冒険劇と、焚き火を囲む情景に多くの大人が憧れた。", link: "https://amzn.to/4dqkrkB" },
+            { name: "開高健", title: "水辺の足跡", img: "https://m.media-amazon.com/images/I/51mWGHU+-yL._SL500_.jpg", desc: "アマゾンやアラスカで巨大魚に挑んだ作家。大自然の生命力と人間の本質を捉えた重厚なルポルタージュ「オーパ！」は不朽の名作。", link: "https://amzn.to/4npH9gY" },
+            { name: "沢木耕太郎", title: "旅の足跡", img: "https://m.media-amazon.com/images/I/41Eyvm+FiZL._SL500_.jpg", desc: "ユーラシア大陸横断の旅「深夜特急」はバックパッカーのバイブル。あの瞬間のきらめきと虚無感は、今も色褪せない。", link: "https://amzn.to/48WQVkY" },
+            { name: "間宮林蔵", title: "測量の足跡", img: "https://m.media-amazon.com/images/I/51htiMtnyOL._SL500_.jpg", desc: "江戸時代後期、命がけで樺太を探検し海峡を発見。北方の正確な地図を作成した偉大なる探検家の記録。", link: "https://amzn.to/4tr7kp3" },
+            { name: "伊能忠敬", title: "地図の足跡", img: "https://m.media-amazon.com/images/I/51DyMtj8QaL._SL500_.jpg", desc: "50歳を過ぎてから日本全国を歩いて測量。己の足で日本の正確な形を明らかにした執念の記録は圧巻。", link: "https://amzn.to/4diZ1pr" },
+            { name: "河口慧海", title: "求道の足跡", img: "https://m.media-amazon.com/images/I/513tqOe+ISL._SL500_.jpg", desc: "鎖国状態のチベットに仏典を求めて単身潜入。ヒマラヤを越えた強靭な精神力と緻密な観察眼の記録。", link: "https://amzn.to/4wr8gfV" },
+            { name: "白石鉱次郎", title: "海の足跡", img: "https://m.media-amazon.com/images/I/51fpkpF3RdL._SL500_.jpg", desc: "世界で最も過酷なヨットレースにアジア人初参戦。風と波と対話する至高の単独世界一周航海記。", link: "https://amzn.to/4uNCMPy" },
+            { name: "田中陽希", title: "踏破の足跡", img: "https://m.media-amazon.com/images/I/51C3mOmxu4L._SL500_.jpg", desc: "日本三百名山を一切の交通機関を使わず踏破する「グレートトラバース」を達成。自分の足のみで繋いだ壮大な旅。", link: "https://amzn.to/4dmz4W3" },
+            { name: "野口聡一", title: "宇宙の足跡", img: "https://m.media-amazon.com/images/I/51kFyUM6cFL._SL500_.jpg", desc: "3種の宇宙船に搭乗した宇宙飛行士。重力から解放された世界と、暗黒から見つめた「青い地球」の記憶。", link: "https://amzn.to/42w4eFj", wiki: "https://ja.wikipedia.org/wiki/野口聡一" },
+            { name: "服部文祥", title: "野生の足跡", img: "https://m.media-amazon.com/images/I/516q9N8pUBL._SL500_.jpg", desc: "食料を現地調達し山に登る「サバイバル登山」を提唱。文明を削ぎ落とし、生命のリアリティを追求する。", link: "https://amzn.to/42r6b61" },
+            { name: "野田知佑", title: "川の足跡", img: "https://m.media-amazon.com/images/I/41Z0NkL1CzL._SL500_.jpg", desc: "日本の川からアラスカまでカヌーで旅したカヌーイスト。焚き火と犬を愛する自由な生き方は多くの人を魅了した。", link: "https://amzn.to/3Pl33Wi" },
+            { name: "加藤保男", title: "山の足跡", img: "https://m.media-amazon.com/images/I/51aKCRQ+LqL._SL500_.jpg", desc: "エベレストに春・夏・秋の3シーズンで登頂を果たした伝説的な登山家。その情熱的な登攀は今も語り継がれる。", link: "https://amzn.to/48YcdP5" },
+            { name: "栗城史多", title: "山の足跡", img: "https://m.media-amazon.com/images/I/51JjiKwcooL._SL500_.jpg", desc: "「冒険の共有」を掲げ、エベレスト単独無酸素登頂に挑み続けた。多くの人々に挑戦する勇気を発信し続けた。", link: "https://amzn.to/49MasVt" },
+            { name: "渡辺大剛", title: "大地の足跡", img: "Earth", desc: "自転車での世界一周や、七大陸最高峰登頂など、自らの身体ひとつで世界を踏破した冒険家。広大な地球を肌で感じ取る旅の軌跡。", link: "", wiki: "https://ja.wikipedia.org/wiki/%E6%B8%A1%E8%BE%BA%E5%A4%A7%E5%89%9B_(%E5%86%92%E9%99%BA%E5%AE%B6)" },
+            { name: "多田等観", title: "求道の足跡", img: "https://m.media-amazon.com/images/I/413fh8vf1QL._SL500_.jpg", desc: "チベットに渡り、ダライ・ラマ13世の厚遇を受けながら仏教の奥義を学んだ僧侶。日本におけるチベット学の礎を築いた。", link: "https://amzn.to/4nvit78" },
+            { name: "青木文教", title: "求道の足跡", img: "https://m.media-amazon.com/images/I/41an9MXPIIL._SL500_.jpg", desc: "チベットに滞在し、現地の文化や風習を深く研究した探検家・仏教学者。未知の文化圏における真摯なフィールドワークの足跡。", link: "https://amzn.to/4wrlskY" },
+            { name: "橘瑞超", title: "砂漠の足跡", img: "Desert", desc: "大谷探検隊の一員として、10代で過酷なシルクロードの砂漠を越え、貴重な仏教遺跡や古文書を発見した若き探検家。", link: "https://amzn.to/4uI4ME2" },
+            { name: "大谷光瑞", title: "砂漠の足跡", img: "https://m.media-amazon.com/images/I/51tlF-5WM0L._SL500_.jpg", desc: "西域探検隊（大谷探検隊）を組織し、シルクロードの仏教遺跡調査を主導した僧侶。東洋史研究に多大な足跡を残した。", link: "https://amzn.to/4feUyGH" },
+            { name: "岩合光昭", title: "野生の足跡", img: "https://m.media-amazon.com/images/I/51f8v7lFSUL._SL500_.jpg", desc: "アフリカの野生動物から街角の猫まで、地球上のあらゆる生命の輝きをレンズ越しに見つめ続ける世界的な動物写真家。", link: "https://amzn.to/4d4GGgW" },
+            { name: "藤原新也", title: "旅の足跡", img: "https://m.media-amazon.com/images/I/410Pf9c1B7L._SL500_.jpg", desc: "「インド放浪」などで生と死の強烈なコントラストを捉え、既存の価値観を揺さぶる言葉と写真で表現した。", link: "https://amzn.to/4ttJwB2" },
+            { name: "白川義員", title: "空の足跡", img: "https://m.media-amazon.com/images/I/517MY3P9k8L._SL500_.jpg", desc: "南極大陸や世界百名山など、地球が持つ究極の美を空撮や過酷なロケで捉え続けた世界的な風景写真家。", link: "https://amzn.to/4fj3bQx", wiki: "https://ja.wikipedia.org/wiki/白川義員" },
+            { name: "白籏史朗", title: "山の足跡", img: "https://m.media-amazon.com/images/I/61EzY-6R2XL._SL500_.jpg", desc: "日本アルプスやヒマラヤなど、世界の峻厳な山々の姿をカメラに収め続けた山岳写真家。山と真正面から向き合う荘厳な作品。", link: "https://amzn.to/4dkcIV8" },
+            { name: "三浦敬三", title: "雪の足跡", img: "https://m.media-amazon.com/images/I/21T8JY2XBQL._SL500_.jpg", desc: "100歳を超えてなお雪山を滑り続けたプロスキーヤー。生涯現役を貫き、年齢という限界を滑り越えた伝説の人物。", link: "https://amzn.to/4tpejid" },
+            { name: "三浦豪太", title: "雪の足跡", img: "https://m.media-amazon.com/images/I/411MRQVkfjL._SL500_.jpg", desc: "オリンピック選手であり、父・雄一郎と共にエベレスト登頂を果たしたアルピニスト・医学博士。雪山を駆ける強靭な肉体と知識。", link: "https://amzn.to/48Z06Br" },
+            { name: "南谷真鈴", title: "頂の足跡", img: "https://m.media-amazon.com/images/I/51Oc+CGaGvL._SL500_.jpg", desc: "日本人最年少で七大陸最高峰を制覇し、エクスプローラーズ・グランドスラムを達成。新世代の冒険を体現する探求者。", link: "https://amzn.to/4wm3twl" },
+            { name: "渡辺玉枝", title: "頂の足跡", img: "https://m.media-amazon.com/images/I/41IA9qySjFL._SL500_.jpg", desc: "73歳でのエベレスト登頂という女性世界最高齢記録を樹立。静かなる情熱で高みを目指し続けた、その逞しき足跡。", link: "https://amzn.to/4tw9DqV" },
+            { name: "谷口けい", title: "山の足跡", img: "https://m.media-amazon.com/images/I/51G08uyMgaL._SL500_.jpg", desc: "女性初となる登山界の最高の栄誉「ピオレドール賞」を受賞。未踏の山々に自由な発想で挑んだ、世界的なアルピニスト。", link: "https://amzn.to/4uMo4Iz" },
+            { name: "倉上慶大", title: "岩の足跡", img: "https://m.media-amazon.com/images/I/619ybSglw+L._SL500_.jpg", desc: "ロープを使わず巨岩を登るボルダリングからビッグウォールまで、世界トップレベルの技術と精神力で岩壁と向き合うフリークライマー。", link: "https://amzn.to/48WP5Ax" },
+            { name: "平山ユージ", title: "岩の足跡", img: "https://m.media-amazon.com/images/I/51B3wcOyIML._SL500_.jpg", desc: "世界の岩場を舞台に数々の初登記録を打ち立てた、日本フリークライミング界のパイオニアにして生ける伝説。", link: "https://amzn.to/4tuaA3b" },
+            { name: "平出和也", title: "未踏の足跡", img: "https://m.media-amazon.com/images/I/51pAn93UdeL._SL500_.jpg", desc: "未踏のルートから高難度の山々に挑み、ピオレドール賞を複数回受賞。類まれな登攀力を持つアルピニスト兼山岳カメラマン。", link: "https://amzn.to/3Pd8C9f" },
+            { name: "中島健郎", title: "未踏の足跡", img: "https://m.media-amazon.com/images/I/51KMWJm1ocL._SL500_.jpg", desc: "平出和也と共に困難な新ルートを開拓し、ピオレドール賞を受賞。ヒマラヤの過酷な環境を美しい映像に残す山岳カメラマン。", link: "https://m.media-amazon.com/images/I/51KMWJm1ocL._SL500_.jpg" },
+            { name: "竹内洋岳", title: "14座の足跡", img: "https://m.media-amazon.com/images/I/51fd-3pxBnL._SL500_.jpg", desc: "日本人で初めてヒマラヤの8000m峰全14座の完全登頂を成し遂げたプロ登山家。極限の世界を生き抜く研ぎ澄まされた術を持つ。", link: "https://amzn.to/4uRS4mt" },
+            { name: "深田久弥", title: "百名山の足跡", img: "https://m.media-amazon.com/images/I/51p4LCAFTxL._SL500_.jpg", desc: "日本各地の山々を登り歩き、その歴史と品格を綴った名著『日本百名山』を著した。日本の山岳文学の最高峰とも言える足跡。", link: "https://amzn.to/3RC9Uv4", wiki: "https://ja.wikipedia.org/wiki/深田久弥" },
+            { name: "山井幸雄", title: "山の足跡", img: "https://m.media-amazon.com/images/I/51oCXdEIuqL._SL500_.jpg", desc: "自らの理想とする登山道具を求め、金物職人の街で「スノーピーク」を創業。野外活動の豊かさを追求し続けた先駆者。", link: "https://amzn.to/3RdI4Fq", wiki: "https://ja.wikipedia.org/wiki/スノーピーク" },
+            { name: "斉藤実", title: "海の足跡", img: "https://m.media-amazon.com/images/I/41MYmoForeL._SL500_.jpg", desc: "世界最高齢でヨットによる単独無寄港世界一周を達成した海洋冒険家。荒れ狂う海を幾度も越えた不屈のセーラー。", link: "https://amzn.to/4wrFYlx", wiki: "https://ja.wikipedia.org/wiki/齊藤實_(ヨットマン)" },
+            { name: "鏑木毅", title: "山道の足跡", img: "https://m.media-amazon.com/images/I/5189rw5tKLL._SL500_.jpg", desc: "日本のトレイルランニング界の第一人者。世界で最も過酷な山岳レースで入賞を果たし、山を駆ける喜びを伝え続ける。", link: "https://amzn.to/4eLyeVa" },
+            { name: "石川弘樹", title: "山道の足跡", img: "https://m.media-amazon.com/images/I/51U3vfIk0RL._SL500_.jpg", desc: "日本にトレイルランニングという文化を根付かせたパイオニア。自然と調和しながら山を走るスタイルを確立した。", link: "https://amzn.to/49ND0xQ" },
+            { name: "中野信子", title: "知の足跡", img: "https://m.media-amazon.com/images/I/41csd3N9t3L._SL500_.jpg", desc: "未知なる人間の「脳」という広大な宇宙を探求する脳科学者。人間の行動や心理の奥底に潜む謎を解き明かす、知的探求の旅人。", link: "https://amzn.to/4uNpbaR" },
+            { name: "本多勝一", title: "辺境の足跡", img: "https://m.media-amazon.com/images/I/51OsPtCboqL._SL500_.jpg", desc: "エスキモーやニューギニア高地人など、極限の環境に生きる人々の懐に飛び込み、その真の姿を伝えたルポルタージュの巨匠。", link: "https://amzn.to/4tugGAB", wiki: "https://ja.wikipedia.org/wiki/本多勝一" },
+            { name: "田中幹也", title: "極北の足跡", img: "Alaska", desc: "カナダ極北のツンドラ地帯を、ソリを引きながら単独で何ヶ月も歩き続ける探検家。絶対的な孤独の中で生と向き合う足跡。", link: "" , wiki: "https://ja.wikipedia.org/wiki/%E3%83%84%E3%83%B3%E3%83%89%E3%83%A9"},
+            { name: "篠塚建次郎", title: "砂漠の足跡", img: "https://m.media-amazon.com/images/I/51bX6KMqvGL._SL500_.jpg", desc: "世界一過酷なモータースポーツ「パリ・ダカールラリー」で日本人初の総合優勝を果たした伝説のラリードライバー。", link: "https://amzn.to/4eQ7Fy9" },
+            { name: "増岡浩", title: "砂漠の足跡", img: "Desert", desc: "パリ・ダカールラリーにおいて日本人として初となる2連覇の偉業を成し遂げ、砂漠の王者として君臨したラリードライバー。", link: "" },
+            { name: "長屋宏和", title: "不屈の足跡", img: "https://m.media-amazon.com/images/I/51bhj4zsO1L._SL500_.jpg", desc: "レース中の大事故で頸髄を損傷しながらも、車椅子レーサーとして過酷な環境でのレースに挑戦し続ける不屈の精神の持ち主。", link: "https://amzn.to/4eKufrY" },
+            { name: "山田淳", title: "頂の足跡", img: "https://m.media-amazon.com/images/I/51Z-uc9H6CL._SL500_.jpg", desc: "当時の世界最年少記録となる23歳で七大陸最高峰登頂を達成した登山家。若き情熱と行動力で世界の頂を極めた。", link: "https://amzn.to/4u9QxrX", wiki: "https://ja.wikipedia.org/wiki/山田淳_(登山家)" }
+        ];
+
+
+        const unknownJapanese = [
+            "未だ見ぬ冒険者"
+        ];
+        unknownJapanese.forEach(name => {
+            japanList.push({
+                name: name, title: "未知の足跡", img: "Journey",
+                desc: "歴史の表舞台には立たずとも、自らのフィールドで限界に挑み続けた探求者。遺された足跡は、知る人ぞ知る記録として深淵に刻まれている。",
+                link: "", wiki: "https://ja.wikipedia.org/w/index.php?search==" + encodeURIComponent(name)
+            });
+        });
+
+        // ▼ 海外の探求者たち
+         const worldList = [
+            { name: "ロアール・アムンセン", title: "極地の覇者", img: "https://m.media-amazon.com/images/I/41A3GwZHXlL._SL500_.jpg", desc: "人類初となる南極点到達を成し遂げた冷徹なる戦略家。綿密な計画と犬ぞり、圧倒的な合理性により氷の大地を制覇。", link: "https://amzn.to/4d8ZsUj" },
+            { name: "アーネスト・シャクルトン", title: "不屈の指揮官", img: "https://m.media-amazon.com/images/I/21FuYCbnY4L._SL500_.jpg", desc: "南極探検中に船が沈没するも、27名全員を生還させた。奇跡の生還劇を主導した、究極のリーダーシップの代名詞。", link: "https://amzn.to/3RoQXvT" },
+            { name: "ロバート・スコット", title: "悲劇の足跡", img: "https://m.media-amazon.com/images/I/31cueoD4pTL._SL500_.jpg", desc: "アムンセンと南極点到達を競い、帰路で遭難死したイギリスの探検家。彼が最期まで書き残した手記は、崇高な探検精神を今に伝える。", link: "https://amzn.to/4uFrnkC", wiki: "https://ja.wikipedia.org/wiki/ロバート・スコット_(探検家)" },
+            { name: "エドモンド・ヒラリー", title: "頂の足跡", img: "https://m.media-amazon.com/images/I/51XoVyjOyVL._SL500_.jpg", desc: "1953年、シェルパのテンジンと共に人類初のエベレスト登頂を成し遂げた登山家。名声を得た後も、ネパールの教育や環境保護に尽力した。", link: "https://amzn.to/4wnbe4Z" },
+            { name: "テンジン・ノルゲイ", title: "頂の足跡", img: "https://m.media-amazon.com/images/I/51ColgBPciL._SL500_.jpg", desc: "ヒラリーと共にエベレスト初登頂を果たした偉大なるシェルパ。ヒマラヤの過酷な環境で登山隊を支え続けた、山を愛する誇り高き男。", link: "https://amzn.to/4v6B9wD" },
+            { name: "ラインホルト・メスナー", title: "超人の足跡", img: "https://m.media-amazon.com/images/I/51FhEm7gWAL._SL500_.jpg", desc: "人類史上初の8000メートル峰全14座完全登頂、およびエベレストの無酸素単独登頂を成し遂げた、アルピニズムの歴史を変えた超人。", link: "https://amzn.to/4feWu20" },
+            { name: "イエジー・ククチカ", title: "不屈の足跡", img: "https://m.media-amazon.com/images/I/41-dNhqT41L._SL500_.jpg", desc: "メスナーに次いで8000m峰全14座を制覇したポーランドの登山家。資金も装備も乏しい中、より困難な冬季や新ルートからの登頂にこだわった。", link: "https://amzn.to/3R4GQfK" },
+            { name: "フリチョフ・ナンセン", title: "極北の足跡", img: "https://m.media-amazon.com/images/I/419uzgcsY7L._SL500_.jpg", desc: "フラム号による北極海横断探検などを行ったノルウェーの探検家。後に難民救済に尽力し、ノーベル平和賞を受賞した。", link: "https://amzn.to/4uJqEPg" },
+            { name: "スヴェン・ヘディン", title: "砂漠の足跡", img: "https://m.media-amazon.com/images/I/41UHAx3I36L._SL500_.jpg", desc: "シルクロードやチベットを探検。タクラマカン砂漠の楼蘭遺跡を発見するなど、地理学・考古学に多大な貢献をした。", link: "https://amzn.to/48VgsLl" },
+            { name: "リチャード・F・バートン", title: "探検の足跡", img: "https://m.media-amazon.com/images/I/51+TWra1naL._SL500_.jpg", desc: "変装してメッカに潜入し、アフリカ大陸のナイル川源流を探求したイギリスの探検家。数十ヶ国語を操る特異な言語学者でもある。", link: "https://amzn.to/4v6BDCX" },
+            { name: "デイヴィッド・リヴィングストン", title: "暗黒大陸の足跡", img: "https://m.media-amazon.com/images/I/51QmsyAopzL._SL500_.jpg", desc: "アフリカ大陸を内陸部まで深く探検し、ヴィクトリア滝を発見した宣教師・探検家。奴隷貿易の悲惨さを世界に訴え続けた。", link: "https://amzn.to/48V5Egm" },
+            { name: "ヘンリー・M・スタンリー", title: "暗黒大陸の足跡", img: "https://m.media-amazon.com/images/I/514eJSx6LXL._SL500_.jpg", desc: "消息を絶ったリヴィングストンをアフリカの奥地で発見し、「リヴィングストン博士でいらっしゃいますか」の名言を残したジャーナリスト。", link: "https://amzn.to/43ciEdT" },
+            { name: "トール・ヘイエルダール", title: "海の足跡", img: "https://m.media-amazon.com/images/I/51RZfy6RNVL._SL500_.jpg", desc: "古代人が海を渡ったことを証明するため、バルサ材のいかだ「コンティキ号」で太平洋を横断。常識を覆した壮大な実験航海の記録。", link: "https://amzn.to/3R6eWzY" },
+            { name: "ジャック＝イヴ・クストー", title: "深海の足跡", img: "https://m.media-amazon.com/images/I/51ptu53Y11L._SL500_.jpg", desc: "スキューバダイビングの器材（アクアラング）を開発し、海の世界を映像で世界中に伝えた「海の恋人」。海洋保護の先駆者。", link: "https://amzn.to/3RF79Jq" },
+            { name: "シルビア・アール", title: "深海の足跡", img: "https://m.media-amazon.com/images/I/51+7sqHn-SL._SL500_.jpg", desc: "女性海洋学者の草分けであり、深海探査の記録を数多く持つ「Her Deepness（深海の女王）」。海の環境保護を強力に推し進める。", link: "https://amzn.to/4wy6sSw" },
+            { name: "ユーリ・ガガーリン", title: "宇宙の足跡", img: "https://m.media-amazon.com/images/I/31FigBr2QFL._SL500_.jpg", desc: "「地球は青かった」という言葉を残した、人類初の有人宇宙飛行を成功させた宇宙飛行士。未知の空間へ飛び込んだ勇気ある第一歩。", link: "https://amzn.to/3RlaOMs" },
+            { name: "ニール・アームストロング", title: "月面の足跡", img: "https://m.media-amazon.com/images/I/51VlgKeKHPL._SL500_.jpg", desc: "アポロ11号で人類として初めて月面に降り立ち、「これは一人の人間にとっては小さな一歩だが、人類にとっては偉大な飛躍である」と語った。", link: "https://amzn.to/3PfjLX9" },
+            { name: "アメリア・イアハート", title: "空の足跡", img: "https://m.media-amazon.com/images/I/41YXIhAk9LL._SL500_.jpg", desc: "女性として初めて大西洋単独横断飛行に成功した飛行士。赤道上世界一周飛行の途中で太平洋上で消息を絶つまで、空を愛し飛び続けた。", link: "https://amzn.to/4db9bcM" },
+            { name: "チャールズ・リンドバーグ", title: "空の足跡", img: "https://m.media-amazon.com/images/I/51DTLbTJMWL._SL500_.jpg", desc: "「翼よ、あれがパリの灯だ」の言葉で知られる、大西洋単独無着陸飛行に世界で初めて成功した飛行家。孤独な夜間飛行の軌跡。", link: "https://amzn.to/4dHzQy3" },
+            { name: "クリストファー・コロンブス", title: "大航海の足跡", img: "https://m.media-amazon.com/images/I/61gDwTdO3BL._SL500_.jpg", desc: "西回りでのアジア到達を目指し、ヨーロッパ世界にとっての「新大陸」を発見した大航海時代の象徴的探検家。", link: "https://amzn.to/4tSGhU5" },
+            { name: "フェルディナンド・マゼラン", title: "世界一周の足跡", img: "https://m.media-amazon.com/images/I/41U2gZHMLnL._SL500_.jpg", desc: "艦隊を率いて史上初の世界一周航海に挑んだ。本人は途中で命を落としたが、彼の意志を継いだ船が帰還し、地球が丸いことを実証した。", link: "https://amzn.to/4dGXyue" },
+            { name: "ジェームズ・クック", title: "太平洋の足跡", img: "https://m.media-amazon.com/images/I/41fkHLFRsoL._SL500_.jpg", desc: "エンデバー号などで3度にわたる太平洋探検を行い、オーストラリアやハワイ諸島などを詳細に海図に記した最大の航海者の一人。", link: "https://amzn.to/4nCMhi3" },
+            { name: "ヴァスコ・ダ・ガマ", title: "航路の足跡", img: "https://m.media-amazon.com/images/I/51M1hH4nijL._SL500_.jpg", desc: "アフリカ大陸の喜望峰を回り、ヨーロッパからインドへの航路を初めて開拓したポルトガルの探検家。", link: "https://amzn.to/4da1SCj" },
+            { name: "マルコ・ポーロ", title: "東方の足跡", img: "https://m.media-amazon.com/images/I/51-7rMi-goL._SL500_.jpg", desc: "ヴェネツィアからアジアへ渡り、元のフビライ・ハンのもとで仕えた。その見聞を口述した『東方見聞録』は後の探検家たちを熱狂させた。", link: "https://amzn.to/4uG6tSq" },
+            { name: "イブン・バットゥータ", title: "大旅行の足跡", img: "https://m.media-amazon.com/images/I/515FK8jdFvL._SL500_.jpg", desc: "14世紀、モロッコからメッカ巡礼を出発点に、約30年かけてアフリカ、中東、インド、中国などを巡ったイスラム世界最大の旅行家。", link: "https://amzn.to/4uSoflH" },
+            { name: "アレクサンダー・フォン・フンボルト", title: "博物学の足跡", img: "https://m.media-amazon.com/images/I/51AyvXOtnHL._SL500_.jpg", desc: "南アメリカ大陸を大規模に探検し、気象、地質、動植物など膨大なデータを収集。近代地理学や博物学の基礎を築いた偉大な科学者。", link: "https://amzn.to/4wrTXrp" },
+            { name: "ジョン・クラカワー", title: "悲劇の足跡", img: "https://m.media-amazon.com/images/I/51pWERKndXL._SL500_.jpg", desc: "エベレスト大量遭難事件の当事者として『空へ』を執筆。極限状況における人間の心理と自然の猛威を容赦なく描く作家・登山家。", link: "https://amzn.to/4tslp5z" },
+            { name: "ヴァルター・ボナッティ", title: "孤高の足跡", img: "https://m.media-amazon.com/images/I/51SWZWzxYLL._SL500_.jpg", desc: "アルプスの数々の難ルートを単独で切り拓いたイタリアの伝説的アルピニスト。純粋な登攀を追求し、後に探検ジャーナリストへと転身した。", link: "https://amzn.to/3PgPqrc" },
+            { name: "アラン・ロベール", title: "都会の足跡", img: "https://m.media-amazon.com/images/I/51Os71jYWpL._SL500_.jpg", desc: "「スパイダーマン」の異名を持ち、命綱なしで世界中の超高層ビルを素手で登り続ける、極めて異端な都市のフリークライマー。", link: "https://amzn.to/42yzzHy" },
+            { name: "ベル・グリルス", title: "野生の足跡", img: "https://m.media-amazon.com/images/I/618NkZA5EzL._SL500_.jpg", desc: "元特殊部隊の技術を駆使し、極寒の地や砂漠、密林からの生還を実演。現代最強のサバイバル・インストラクター。", link: "https://amzn.to/49uRBOC" }
+        ];
+
+
+        // ============================================================
+
+        if (siteConfig.x_url) { document.getElementById('link-x').href = siteConfig.x_url; document.getElementById('link-x').style.display = 'inline-block'; }
+        if (siteConfig.note_url) { document.getElementById('link-note').href = siteConfig.note_url; document.getElementById('link-note').style.display = 'inline-block'; }
+        if (siteConfig.email) { document.getElementById('link-email').href = `mailto:${siteConfig.email}`; }
+
+        function generateCards(list, containerId, prefixId) {
+            const container = document.getElementById(containerId);
+            let html = '';
+            list.forEach((adv, index) => {
+                const id = `${prefixId}_${index}`;
+                const wikiUrl = adv.wiki ? adv.wiki : `https://ja.wikipedia.org/wiki/${encodeURIComponent(adv.name)}`;
+                const imageUrl = (adv.img && adv.img.startsWith('http')) ? adv.img : `https://via.placeholder.com/200x200/10141e/c5a059?text=${adv.img || 'Journey'}`;
+                
+                html += `
+                <article class="adventurer-card">
+                    <div class="image-wrapper"><img src="${imageUrl}" class="profile-image" loading="lazy"></div>
+                    <div class="info-area">
+                        <h2 class="name">${adv.name}</h2><p class="class-title">${adv.title}</p>
+                        <p class="description">${adv.desc}</p>
+                        <div class="button-group">
+                            <a href="${adv.link || '#'}" class="btn guide-btn" target="_blank" rel="noopener noreferrer">軌跡を辿る</a>
+                            <a href="${wikiUrl}" class="btn wiki-btn" target="_blank" rel="noopener noreferrer">書庫へ</a>
+                        </div>
+                    </div>
+                    <button class="toggle-chat-btn" onclick="window.toggleChat('${id}')">▼ 語り合う</button>
+                    <div id="chat-${id}" class="chat-section">
+                        <div class="chat-board" id="board-${id}"><div style="text-align:center; color:#5a6573; margin-top:20px; font-size:0.7rem;">記憶を読込中...</div></div>
+                        <div class="chat-form">
+                            <input type="text" id="name-${id}" placeholder="名乗る">
+                            <textarea id="msg-${id}" placeholder="言葉を刻む"></textarea>
+                            <button onclick="window.postCloudMessage('chat_${id}', 'name-${id}', 'msg-${id}')" class="send-btn">投稿</button>
+                        </div>
+                    </div>
+                </article>`;
+            });
+            container.innerHTML = html;
+        }
+
+        generateCards(japanList, 'grid-japan', 'jp');
+        generateCards(worldList, 'grid-world', 'wd');
+
+        window.showPage = (pageId) => {
+            document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('nav a.nav-tab').forEach(link => link.classList.remove('active'));
+            document.getElementById('page-' + pageId).classList.add('active');
+            if(document.getElementById('nav-' + pageId)) document.getElementById('nav-' + pageId).classList.add('active');
+            document.getElementById('search-container').style.display = (pageId === 'japan' || pageId === 'world') ? 'block' : 'none';
+            window.scrollTo(0, 0);
+        };
+
+        window.filterAdventurers = () => {
+            const input = document.getElementById('search-input').value.toLowerCase();
+            const activeSec = document.querySelector('.page-section.active');
+            const cards = activeSec.querySelectorAll('.adventurer-card');
+            let count = 0;
+            cards.forEach(c => {
+                const txt = c.textContent.toLowerCase();
+                if(txt.includes(input)) { c.style.display = 'flex'; count++; } else { c.style.display = 'none'; }
+            });
+            activeSec.querySelector('.no-results').style.display = (count === 0 && input !== '') ? 'block' : 'none';
+        };
+
+        // Firebase 連携機能
+        let db, auth, currentUser, appId;
+        window.activeListeners = {};
+        window.activeThreadUnsubscribe = null;
+
+        async function initFirebase() {
+            try {
+                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                if (!firebaseConfig) { document.getElementById('loading-overlay').style.display = 'none'; return; }
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app); db = getFirestore(app);
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) { await signInWithCustomToken(auth, __initial_auth_token); } else { await signInAnonymously(auth); }
+                onAuthStateChanged(auth, (user) => { 
+                    if (user) { 
+                        currentUser = user; 
+                        setupThreadsListener(); 
+                        document.getElementById('loading-overlay').style.display = 'none'; 
+                    } 
+                });
+            } catch (e) { console.error(e); document.getElementById('loading-overlay').style.display = 'none'; }
+        }
+        window.addEventListener('load', initFirebase);
+
+        function setupThreadsListener() {
+            if (!currentUser) return;
+            const container = document.getElementById('threads-container');
+            if (!container) return;
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'tavern_threads');
+            
+            onSnapshot(colRef, (snapshot) => {
+                const threads = [];
+                snapshot.forEach(d => { threads.push({ id: d.id, ...d.data() }); });
+                
+                threads.sort((a, b) => {
+                    const timeA = a.updatedAt ? a.updatedAt.toMillis() : 0;
+                    const timeB = b.updatedAt ? b.updatedAt.toMillis() : 0;
+                    return timeB - timeA;
+                });
+                
+                renderThreads(threads, container);
+            }, (error) => { console.error(error); });
+        }
+
+        function renderThreads(threads, container) {
+            container.innerHTML = '';
+            if (threads.length === 0) {
+                container.innerHTML = `<div style="text-align:center; color:#5a6573; padding: 2rem;">まだ卓はありません。最初の卓を設けてください。</div>`;
+                return;
+            }
+            
+            threads.forEach(thread => {
+                const div = document.createElement('div');
+                div.className = 'thread-card';
+                div.onclick = () => { window.showThread(thread.id, thread.title); };
+                
+                let timeStr = "ついさっき";
+                if (thread.updatedAt) {
+                    const date = thread.updatedAt.toDate();
+                    timeStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                }
+                
+                div.innerHTML = `
+                    <div class="thread-title">${escapeHTML(thread.title)}</div>
+                    <div class="thread-meta">
+                        <span>卓主：${escapeHTML(thread.author || "名もなき旅人")}</span>
+                        <span>更新：${timeStr}</span>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        window.toggleNewThreadForm = () => {
+            const form = document.getElementById('new-thread-form');
+            form.style.display = (form.style.display === 'none') ? 'block' : 'none';
+        };
+
+        window.createThread = async () => {
+            if (!currentUser) return;
+            const titleInput = document.getElementById('thread-title');
+            const authorInput = document.getElementById('thread-author');
+            const msgInput = document.getElementById('thread-first-msg');
+            
+            const title = titleInput.value.trim();
+            const author = authorInput.value.trim() || "名もなき旅人";
+            const msg = msgInput.value.trim();
+            
+            if (!title || !msg) { alert("卓の題名と最初の言葉を入力してください。"); return; }
+            
+            try {
+                const threadRef = collection(db, 'artifacts', appId, 'public', 'data', 'tavern_threads');
+                const newDoc = await addDoc(threadRef, {
+                    title: title, author: author, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), userId: currentUser.uid
+                });
+                
+                const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', `thread_${newDoc.id}`);
+                await addDoc(messagesRef, {
+                    name: author, text: msg, timestamp: serverTimestamp(), userId: currentUser.uid
+                });
+                
+                titleInput.value = ''; authorInput.value = ''; msgInput.value = '';
+                window.toggleNewThreadForm();
+            } catch (e) { console.error(e); }
+        };
+
+        window.showThread = (threadId, threadTitle) => {
+            document.getElementById('tavern-thread-list').style.display = 'none';
+            document.getElementById('tavern-single-thread').style.display = 'block';
+            document.getElementById('current-thread-title').textContent = threadTitle;
+            
+            if (window.activeThreadUnsubscribe) { window.activeThreadUnsubscribe(); }
+            
+            const boardId = 'board-tavern-thread';
+            const board = document.getElementById(boardId);
+            board.innerHTML = `<div style="text-align:center; color:#5a6573; margin-top:20px; font-size:0.85rem;">深淵の記憶を読み込んでいます...</div>`;
+            
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', `thread_${threadId}`);
+            
+            window.activeThreadUnsubscribe = onSnapshot(colRef, (snapshot) => {
+                const messages = [];
+                snapshot.forEach(d => { messages.push({ id: d.id, ...d.data() }); });
+                messages.sort((a, b) => {
+                    const timeA = a.timestamp ? a.timestamp.toMillis() : Date.now();
+                    const timeB = b.timestamp ? b.timestamp.toMillis() : Date.now();
+                    return timeA - timeB;
+                });
+                renderMessages(messages, board);
+            }, (error) => { console.error(error); });
+            
+            const postBtn = document.getElementById('btn-post-tavern-thread');
+            postBtn.onclick = async () => {
+                const nameInput = document.getElementById('name-tavern-thread');
+                const msgInput = document.getElementById('msg-tavern-thread');
+                const name = nameInput.value.trim() || "名もなき旅人";
+                const text = msgInput.value.trim();
+                if (!text || !currentUser) return;
+                
+                try {
+                    await addDoc(colRef, { name: name, text: text, timestamp: serverTimestamp(), userId: currentUser.uid });
+                    const threadDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'tavern_threads', threadId);
+                    await updateDoc(threadDocRef, { updatedAt: serverTimestamp() });
+                    msgInput.value = '';
+                } catch(e) { console.error(e); }
+            };
+        };
+
+        window.backToThreadList = () => {
+            document.getElementById('tavern-single-thread').style.display = 'none';
+            document.getElementById('tavern-thread-list').style.display = 'block';
+            if (window.activeThreadUnsubscribe) {
+                window.activeThreadUnsubscribe();
+                window.activeThreadUnsubscribe = null;
+            }
+        };
+
+        function setupChatListener(colName, boardId) {
+            if (!currentUser) return;
+            const board = document.getElementById(boardId);
+            if (!board) return;
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', colName);
+            onSnapshot(colRef, (snap) => {
+                const msgs = []; snap.forEach(doc => { msgs.push({ id: doc.id, ...doc.data() }); });
+                msgs.sort((a, b) => (a.timestamp?.toMillis() || 0) - (b.timestamp?.toMillis() || 0));
+                renderMessages(msgs, board);
+            });
+        }
+
+        function renderMessages(messages, boardElement) {
+            boardElement.innerHTML = '';
+            if (messages.length === 0) {
+                boardElement.innerHTML = `<div style="text-align:center; color:#5a6573; padding-top:20px; font-size:0.7rem;">まだ書き込みはありません。最初の言葉を刻んでください。</div>`;
+                return;
+            }
+            messages.forEach(msg => {
+                const div = document.createElement('div'); div.className = 'chat-message';
+                let timeStr = "ついさっき";
+                if (msg.timestamp) {
+                    const date = msg.timestamp.toDate();
+                    timeStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                }
+                div.innerHTML = `<strong>[${escapeHTML(msg.name || "名無")}]</strong> ${escapeHTML(msg.text).replace(/\n/g, '<br>')} <span class="timestamp">${timeStr}</span>`;
+                boardElement.appendChild(div);
+            });
+            boardElement.scrollTop = boardElement.scrollHeight;
+        }
+
+        window.postCloudMessage = async (col, nameId, msgId) => {
+            const n = document.getElementById(nameId).value.trim() || "名無";
+            const t = document.getElementById(msgId).value.trim();
+            if(!t || !currentUser) return;
+            try {
+                const colRef = collection(db, 'artifacts', appId, 'public', 'data', col);
+                await addDoc(colRef, { name: n, text: t, timestamp: serverTimestamp(), userId: currentUser.uid });
+                document.getElementById(msgId).value = '';
+            } catch (e) { console.error(e); }
+        };
+
+        window.toggleChat = (chatId) => {
+            const sec = document.getElementById(`chat-${chatId}`);
+            const btn = sec.previousElementSibling;
+            if(sec.classList.contains('active')) { sec.classList.remove('active'); btn.textContent = "▼ 語り合う"; }
+            else { 
+                sec.classList.add('active'); btn.textContent = "▲ 閉じる";
+                if (!window.activeListeners[chatId]) { setupChatListener(`chat_${chatId}`, `board-${chatId}`); window.activeListeners[chatId] = true; }
+            }
+        };
+
+        function escapeHTML(s) { return s.replace(/[&<>'"]/g, t => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[t] || t)); }
+        window.showPage('japan');
+    </script>
+</body>
+</html>
